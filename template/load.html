@@ -1,0 +1,79 @@
+<!doctype html>
+<html dir="ltr" lang="zh-CN">
+
+	<head>
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+		<title>闭包环境中的事件加载</title>
+		<script type="text/javascript">
+			(function() {
+				if(!window.JS) {
+					window['JS'] = {}
+				}
+				var addEvent = function(obj, type, fn) {
+					if(obj.addEventListener)
+						obj.addEventListener(type, fn, false);
+					else if(obj.attachEvent) {
+						obj["e" + type + fn] = fn;
+						obj.attachEvent("on" + type, function() {
+							obj["e" + type + fn]();
+						});
+					}
+				};
+				var onReady = function(loadEvent, waitForImages) {
+					if(waitForImages) {
+						return addEvent(window, 'load', loadEvent);
+					}
+					var init = function() {
+						if(arguments.callee.done) return;
+						arguments.callee.done = true;
+						loadEvent.apply(document, arguments);
+					};
+					if(!+"\v1") {
+						if(window.self == window.top) {
+							(function() {
+								try {
+									document.documentElement.doScroll("left");
+								} catch(e) {
+									setTimeout(arguments.callee, 0);
+									return;
+								}
+								init();
+							})();
+						} else {
+							document.attachEvent("onreadystatechange", function() {
+								if(document.readyState === "complete") {
+									document.detachEvent("onreadystatechange", arguments.callee);
+									init();
+								}
+							});
+						}
+					} else {
+						document.addEventListener("DOMContentLoaded", function() {
+							document.removeEventListener("DOMContentLoaded", arguments.callee, false);
+							init();
+						}, false);
+					}
+					return true;
+				}
+				JS.onReady = onReady;
+				var $ = function(id) {
+					return document.getElementById(id);
+				}
+				JS.$ = $;
+			})()
+
+			JS.onReady(function() {
+				alert(JS.$("test").innerHTML)
+			}, true);
+			JS.onReady(function() {
+				alert("dddddddddddddddd")
+			}, true);
+		</script>
+	</head>
+
+	<body>
+		<p id="test">Test</p>
+	</body>
+
+</html>
